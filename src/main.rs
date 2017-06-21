@@ -1,10 +1,14 @@
 extern crate docopt;
+extern crate futures;
+extern crate hyper;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;
 
+mod app;
 mod config;
 
+use app::Application;
 use config::Config;
 
 const USAGE: &'static str = "
@@ -39,7 +43,8 @@ fn main() {
         Err(err) => panic!("{}", err),
     };
 
-    println!("{:#?}", config);
+    Application::new()
+        .execute(config);
 }
 
 fn load_config(path: String) -> Result<Config, String> {
