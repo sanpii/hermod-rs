@@ -1,6 +1,7 @@
 extern crate docopt;
 #[macro_use]
 extern crate serde_derive;
+extern crate toml;
 
 mod config;
 
@@ -33,5 +34,33 @@ fn main() {
         Err(err) => err.exit(),
     };
 
-    println!("{:?}", args);
+    let config = match load_config(args.flag_config) {
+        Ok(config) => config,
+        Err(err) => panic!("{}", err),
+    };
+
+    println!("{:#?}", config);
+}
+
+fn load_config(path: String) -> Result<Config, String> {
+    use std::io::Read;
+
+    let mut file = match ::std::fs::File::open(path.clone()) {
+        Ok(file) => file,
+        Err(err) => return Err(format!("Unable to open {:?}: {}", path, err)),
+    };
+
+    let mut content = String::new();
+
+    match file.read_to_string(&mut content) {
+        Ok(content) => content,
+        Err(err) => return Err(format!("Unable to read {:?}: {}", path, err)),
+    };
+
+    let config = match ::toml::from_str(content.as_str()) {
+        Ok(config) => config,
+        Err(err) => return Err(format!("Unable to parse configuration: {}", err)),
+    };
+
+    Ok(config)
 }
