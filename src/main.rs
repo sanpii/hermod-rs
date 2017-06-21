@@ -1,7 +1,10 @@
 extern crate docopt;
 extern crate env_logger;
 extern crate futures;
+extern crate hermod_module;
 extern crate hyper;
+extern crate libloading;
+extern crate libc;
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -10,6 +13,7 @@ extern crate toml;
 
 mod app;
 mod config;
+mod module;
 
 use app::Application;
 use config::Config;

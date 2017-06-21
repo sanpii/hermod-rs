@@ -1,4 +1,4 @@
-use ::std::collections::HashMap;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -12,6 +12,7 @@ pub struct Global {
     pub path_session: String,
     pub log_file: String,
     pub port: Option<u32>,
+    pub plugins_directory: String,
 }
 
 #[derive(Debug, Deserialize)]

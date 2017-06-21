@@ -1,0 +1,10 @@
+[package]
+name = "hermod-module-dummy"
+version = "0.1.0"
+authors = ["Sanpi <sanpi@homecomputing.fr>"]
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+hermod-module = { path = "../../module" }

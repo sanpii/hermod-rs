@@ -11,12 +11,16 @@ use hyper::server::{
 
 pub struct Application;
 
+use hermod_module::Module;
+
 impl Application {
     pub fn new() -> Self {
         Application
     }
 
     pub fn execute(&self, config: ::Config) {
+        self.load_modules(&config);
+
         let port = config.global.port
             .unwrap_or(9_000);
 
@@ -29,6 +33,30 @@ impl Application {
 
         server.run()
             .unwrap();
+    }
+
+    fn load_modules(&self, config: &::Config) {
+        let ref plugins = match config.plugins {
+            Some(ref plugins) => plugins,
+            None => return,
+        };
+
+        for (_, plugin) in plugins.iter() {
+            let filename = match plugin {
+                &::config::Plugin::Simple(ref filename) => filename.clone(),
+                &::config::Plugin::Detailed(ref detail) => detail.load.clone(),
+            };
+
+            let path = format!("{}/{}", config.global.plugins_directory, filename);
+
+            let module = match ::module::Loader::load(&path) {
+                Ok(module) => module,
+                Err(err) => {
+                    error!("{}", err);
+                    continue;
+                },
+            };
+        }
     }
 }
 
