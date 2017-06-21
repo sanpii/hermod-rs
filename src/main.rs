@@ -1,6 +1,9 @@
 extern crate docopt;
+extern crate env_logger;
 extern crate futures;
 extern crate hyper;
+#[macro_use]
+extern crate log;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;
@@ -28,6 +31,9 @@ struct Args {
 }
 
 fn main() {
+    ::env_logger::init()
+        .unwrap();
+
     let docopt = match ::docopt::Docopt::new(USAGE) {
         Ok(docopt) => docopt,
         Err(err) => err.exit(),
