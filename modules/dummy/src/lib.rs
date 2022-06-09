@@ -1,8 +1,6 @@
-extern crate hermod_module;
-
 pub struct DummyModule;
 
-impl ::hermod_module::Module for DummyModule {
+impl hermod_module::Module for DummyModule {
 }
 
 #[no_mangle]

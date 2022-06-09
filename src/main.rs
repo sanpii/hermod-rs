@@ -1,16 +1,3 @@
-extern crate docopt;
-extern crate env_logger;
-extern crate futures;
-extern crate hermod_module;
-extern crate hyper;
-extern crate libloading;
-extern crate libc;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde_derive;
-extern crate toml;
-
 mod app;
 mod config;
 mod module;
@@ -18,7 +5,7 @@ mod module;
 use app::Application;
 use config::Config;
 
-const USAGE: &'static str = "
+const USAGE: &str = "
 Usage:
   hermod [-h|--help] [--config=<PATH>] [--foreground]
 
@@ -28,17 +15,17 @@ Options:
   -f --foreground       Start foreground (do not daemonize)
 ";
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, serde_derive::Deserialize)]
 struct Args {
     flag_config: String,
     flag_foreground: bool,
 }
 
 fn main() {
-    ::env_logger::init()
+    env_logger::init()
         .unwrap();
 
-    let docopt = match ::docopt::Docopt::new(USAGE) {
+    let docopt = match docopt::Docopt::new(USAGE) {
         Ok(docopt) => docopt,
         Err(err) => err.exit(),
     };
@@ -60,7 +47,7 @@ fn main() {
 fn load_config(path: String) -> Result<Config, String> {
     use std::io::Read;
 
-    let mut file = match ::std::fs::File::open(path.clone()) {
+    let mut file = match std::fs::File::open(path.clone()) {
         Ok(file) => file,
         Err(err) => return Err(format!("Unable to open {:?}: {}", path, err)),
     };
@@ -72,7 +59,7 @@ fn load_config(path: String) -> Result<Config, String> {
         Err(err) => return Err(format!("Unable to read {:?}: {}", path, err)),
     };
 
-    let config = match ::toml::from_str(content.as_str()) {
+    let config = match toml::from_str(content.as_str()) {
         Ok(config) => config,
         Err(err) => return Err(format!("Unable to parse configuration: {}", err)),
     };

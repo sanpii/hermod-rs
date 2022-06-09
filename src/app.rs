@@ -11,14 +11,12 @@ use hyper::server::{
 
 pub struct Application;
 
-use hermod_module::Module;
-
 impl Application {
     pub fn new() -> Self {
         Application
     }
 
-    pub fn execute(&self, config: ::Config) {
+    pub fn execute(&self, config: crate::Config) {
         self.load_modules(&config);
 
         let port = config.global.port
@@ -35,7 +33,7 @@ impl Application {
             .unwrap();
     }
 
-    fn load_modules(&self, config: &::Config) {
+    fn load_modules(&self, config: &crate::Config) {
         let ref plugins = match config.plugins {
             Some(ref plugins) => plugins,
             None => return,
@@ -43,16 +41,16 @@ impl Application {
 
         for (_, plugin) in plugins.iter() {
             let filename = match plugin {
-                &::config::Plugin::Simple(ref filename) => filename.clone(),
-                &::config::Plugin::Detailed(ref detail) => detail.load.clone(),
+                &crate::config::Plugin::Simple(ref filename) => filename.clone(),
+                &crate::config::Plugin::Detailed(ref detail) => detail.load.clone(),
             };
 
             let path = format!("{}/{}", config.global.plugins_directory, filename);
 
-            let module = match ::module::Loader::load(&path) {
+            let module = match crate::module::Loader::load(&path) {
                 Ok(module) => module,
                 Err(err) => {
-                    error!("{}", err);
+                    log::error!("{}", err);
                     continue;
                 },
             };
@@ -65,8 +63,8 @@ struct Core;
 impl Service for Core {
     type Request = Request;
     type Response = Response;
-    type Error = ::hyper::Error;
-    type Future = ::futures::future::FutureResult<Self::Response, Self::Error>;
+    type Error = hyper::Error;
+    type Future = futures::future::FutureResult<Self::Response, Self::Error>;
 
     fn call(&self, request: Request) -> Self::Future {
         let mut response = Response::new();
@@ -87,6 +85,6 @@ impl Service for Core {
             }
         }
 
-        ::futures::future::ok(response)
+        futures::future::ok(response)
     }
 }
