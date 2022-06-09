@@ -34,15 +34,15 @@ impl Application {
     }
 
     fn load_modules(&self, config: &crate::Config) {
-        let ref plugins = match config.plugins {
+        let plugins = match config.plugins {
             Some(ref plugins) => plugins,
             None => return,
         };
 
         for (_, plugin) in plugins.iter() {
             let filename = match plugin {
-                &crate::config::Plugin::Simple(ref filename) => filename.clone(),
-                &crate::config::Plugin::Detailed(ref detail) => detail.load.clone(),
+                crate::config::Plugin::Simple(ref filename) => filename.clone(),
+                crate::config::Plugin::Detailed(ref detail) => detail.load.clone(),
             };
 
             let path = format!("{}/{}", config.global.plugins_directory, filename);
