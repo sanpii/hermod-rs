@@ -17,7 +17,7 @@ Options:
   -f --foreground       Start foreground (do not daemonize)
 ";
 
-#[derive(Debug, serde_derive::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 struct Args {
     flag_config: String,
     flag_foreground: bool,
