@@ -23,7 +23,8 @@ struct Args {
     flag_foreground: bool,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), hyper::Error> {
     env_logger::init();
 
     let docopt = match docopt::Docopt::new(USAGE) {
@@ -42,7 +43,8 @@ fn main() {
     };
 
     Application::new()
-        .execute(config);
+        .execute(config)
+        .await
 }
 
 fn load_config(path: String) -> Result<Config, String> {

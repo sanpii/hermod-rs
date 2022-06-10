@@ -7,8 +7,7 @@ edition = "2021"
 [dependencies]
 docopt = "0.8"
 env_logger = "0.9"
-futures = "0.1"
-hyper = "0.11"
+futures = "0.3"
 libloading = "0.4"
 libc = "0.2"
 log = "0.4"
@@ -16,6 +15,14 @@ toml = "0.5"
 
 hermod-module = { path = "./module" }
 
+[dependencies.hyper]
+version = "0.14"
+features = ["http1", "server", "tcp"]
+
 [dependencies.serde]
 version = "1.0"
 features = ["derive"]
+
+[dependencies.tokio]
+version = "1.19"
+features = ["rt-multi-thread", "macros"]
