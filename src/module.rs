@@ -17,9 +17,11 @@ pub struct Loader;
 
 impl Loader {
     pub fn load(path: &String) -> Result<Wrapper, String> {
-        let lib = match Library::new(path) {
-            Ok(lib) => lib,
-            Err(err) => return Err(format!("Unable to load {:?}: {}", path, err)),
+        let lib = unsafe {
+            match Library::new(path) {
+                Ok(lib) => lib,
+                Err(err) => return Err(format!("Unable to load {:?}: {}", path, err)),
+            }
         };
 
         let create_object_fn = Self::create_object_fn(&lib);
