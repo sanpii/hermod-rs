@@ -6,38 +6,23 @@ mod module;
 
 use app::Application;
 use config::Config;
+use clap::Parser;
 
-const USAGE: &str = "
-Usage:
-  hermod [-h|--help] [--config=<PATH>] [--foreground]
-
-Options:
-  -h --help             Display this message
-  -c --config=<PATH>    Specify a config file [default: /etc/hermod/main.cfg]
-  -f --foreground       Start foreground (do not daemonize)
-";
-
-#[derive(Debug, serde::Deserialize)]
+#[derive(clap::Parser, serde::Deserialize)]
 struct Args {
-    flag_config: String,
-    flag_foreground: bool,
+    #[clap(long, short)]
+    config: String,
+    #[clap(long, short)]
+    foreground: bool,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), hyper::Error> {
     env_logger::init();
 
-    let docopt = match docopt::Docopt::new(USAGE) {
-        Ok(docopt) => docopt,
-        Err(err) => err.exit(),
-    };
+    let args = Args::parse();
 
-    let args: Args = match docopt.deserialize() {
-        Ok(args) => args,
-        Err(err) => err.exit(),
-    };
-
-    let config = match load_config(args.flag_config) {
+    let config = match load_config(args.config) {
         Ok(config) => config,
         Err(err) => panic!("{}", err),
     };
