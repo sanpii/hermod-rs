@@ -22,7 +22,7 @@ impl Application {
         let port = config.global.port
             .unwrap_or(9_000);
 
-        let addr = format!("127.0.0.1:{}", port)
+        let addr = format!("127.0.0.1:{port}")
             .parse()
             .unwrap();
 
@@ -45,12 +45,12 @@ impl Application {
                 crate::config::Plugin::Detailed(ref detail) => detail.load.clone(),
             };
 
-            let path = format!("{}/{}", config.global.plugins_directory, filename);
+            let path = format!("{}/{filename}", config.global.plugins_directory);
 
             let module = match crate::module::Loader::load(&path) {
                 Ok(module) => module,
                 Err(err) => {
-                    log::error!("{}", err);
+                    log::error!("{err}");
                     continue;
                 },
             };

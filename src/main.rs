@@ -24,7 +24,7 @@ async fn main() -> Result<(), hyper::Error> {
 
     let config = match load_config(args.config) {
         Ok(config) => config,
-        Err(err) => panic!("{}", err),
+        Err(err) => panic!("{err}"),
     };
 
     Application::new()
@@ -37,19 +37,19 @@ fn load_config(path: String) -> Result<Config, String> {
 
     let mut file = match std::fs::File::open(path.clone()) {
         Ok(file) => file,
-        Err(err) => return Err(format!("Unable to open {:?}: {}", path, err)),
+        Err(err) => return Err(format!("Unable to open {path:?}: {err}")),
     };
 
     let mut content = String::new();
 
     match file.read_to_string(&mut content) {
         Ok(content) => content,
-        Err(err) => return Err(format!("Unable to read {:?}: {}", path, err)),
+        Err(err) => return Err(format!("Unable to read {path:?}: {err}")),
     };
 
     let config = match toml::from_str(content.as_str()) {
         Ok(config) => config,
-        Err(err) => return Err(format!("Unable to parse configuration: {}", err)),
+        Err(err) => return Err(format!("Unable to parse configuration: {err}")),
     };
 
     Ok(config)

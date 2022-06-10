@@ -20,7 +20,7 @@ impl Loader {
         let lib = unsafe {
             match Library::new(path) {
                 Ok(lib) => lib,
-                Err(err) => return Err(format!("Unable to load {:?}: {}", path, err)),
+                Err(err) => return Err(format!("Unable to load {path:?}: {err}")),
             }
         };
 
