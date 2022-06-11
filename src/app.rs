@@ -8,18 +8,27 @@ use hyper::{
     Server,
     service::Service,
 };
+use std::collections::HashMap;
 
-pub struct Application;
+type Modules = std::sync::Arc<std::sync::Mutex<HashMap<String, crate::module::Wrapper>>>;
+
+pub struct Application {
+    config: crate::Config,
+    modules: Modules,
+}
 
 impl Application {
-    pub fn new() -> Self {
-        Application
+    pub fn new(config: crate::Config) -> Self {
+        let modules = Self::load_modules(&config);
+
+        Application {
+            config,
+            modules: std::sync::Arc::new(std::sync::Mutex::new(modules)),
+        }
     }
 
-    pub async fn execute(&self, config: crate::Config) -> Result<(), hyper::Error> {
-        self.load_modules(&config);
-
-        let port = config.global.port
+    pub async fn execute(&self) -> Result<(), hyper::Error> {
+        let port = self.config.global.port
             .unwrap_or(9_000);
 
         let addr = format!("127.0.0.1:{port}")
@@ -28,18 +37,26 @@ impl Application {
 
         let server = Server::bind(&addr);
 
-        server.serve(hyper::service::make_service_fn(|_| async {
-            Ok::<_, std::convert::Infallible>(Core)
+        server.serve(hyper::service::make_service_fn(move |_| {
+            let config = self.config.clone();
+            let modules = self.modules.clone();
+
+            async move {
+                let core = Core::new(config, modules);
+                Ok::<_, std::convert::Infallible>(core)
+            }
         })).await
     }
 
-    fn load_modules(&self, config: &crate::Config) {
+    fn load_modules(config: &crate::Config) -> HashMap<String, crate::module::Wrapper> {
+        let mut modules = HashMap::new();
+
         let plugins = match config.plugins {
             Some(ref plugins) => plugins,
-            None => return,
+            None => return modules,
         };
 
-        for (_, plugin) in plugins.iter() {
+        for (name, plugin) in plugins.iter() {
             let filename = match plugin {
                 crate::config::Plugin::Simple(ref filename) => filename.clone(),
                 crate::config::Plugin::Detailed(ref detail) => detail.load.clone(),
@@ -54,11 +71,27 @@ impl Application {
                     continue;
                 },
             };
+
+            modules.insert(name.clone(), module);
         }
+
+        modules
     }
 }
 
-struct Core;
+struct Core {
+    config: crate::Config,
+    modules: Modules,
+}
+
+impl Core {
+    fn new(config: crate::Config, modules: Modules) -> Self {
+        Self {
+            config,
+            modules,
+        }
+    }
+}
 
 impl Service<Request<hyper::Body>> for Core {
     type Response = Response<hyper::Body>;
@@ -72,8 +105,8 @@ impl Service<Request<hyper::Body>> for Core {
     fn call(&mut self, request: Request<hyper::Body>) -> Self::Future {
         let mut response = Response::default();
 
-        match request.method() {
-            &Method::OPTIONS => {
+        match *request.method() {
+            Method::OPTIONS => {
                 let headers = response.headers_mut();
 
                 headers.append(hyper::header::ALLOW, "HEAD,GET,PUT,DELETE,OPTIONS".parse().unwrap());
@@ -82,6 +115,18 @@ impl Service<Request<hyper::Body>> for Core {
                 if let Some(cors_method) = request.headers().get("HTTP_CORS_METHOD") {
                     headers.append("Access-Control-Allow-Method", cors_method.clone());
                 }
+            },
+            Method::GET => {
+                match self.config.route.get(request.uri().path().trim_start_matches('/')) {
+                    Some(route) => {
+                        let (module_name, page_name) = route.split_once(':').unwrap();
+                        match self.modules.lock().unwrap().get(module_name) {
+                            Some(module) => response = module.process(page_name, request),
+                            None => *response.status_mut() = StatusCode::FOUND,
+                        }
+                    }
+                    None => *response.status_mut() = StatusCode::NOT_FOUND,
+                };
             },
             _ => {
                 *response.status_mut() = StatusCode::NOT_FOUND;

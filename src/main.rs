@@ -27,8 +27,8 @@ async fn main() -> Result<(), hyper::Error> {
         Err(err) => panic!("{err}"),
     };
 
-    Application::new()
-        .execute(config)
+    Application::new(config)
+        .execute()
         .await
 }
 

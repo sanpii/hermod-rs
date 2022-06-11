@@ -1,16 +1,21 @@
 use libloading::Library;
-use libloading::os::unix::Symbol;
+use std::collections::HashMap;
 
 pub struct Wrapper {
-    _lib: Library,
-    module: Option<Box<dyn hermod_module::Module>>,
-    destroy_object_fn: Symbol<extern fn(&dyn hermod_module::Module)>,
+    lib: std::sync::Arc<Library>,
+    pages: HashMap<String, Box<dyn hermod_module::Page>>,
 }
 
 impl Wrapper {
+    pub fn process(&self, name: &str, request: hermod_module::Request) -> hermod_module::Response {
+        self.pages.get(name).unwrap().process(request)
+    }
 }
 
-impl hermod_module::Module for Wrapper {
+impl hermod_module::Registrar for Wrapper {
+    fn register(&mut self, name: &str, page: Box<dyn hermod_module::Page>) {
+        self.pages.insert(name.to_string(), page);
+    }
 }
 
 pub struct Loader;
@@ -24,42 +29,31 @@ impl Loader {
             }
         };
 
-        let create_object_fn = Self::create_object_fn(&lib);
-        let destroy_object_fn = Self::destroy_object_fn(&lib);
+        let mut wrapper = Wrapper {
+            lib: std::sync::Arc::new(lib),
+            pages: HashMap::new(),
+        };
 
-        let module = create_object_fn();
+        Self::declaration(&mut wrapper);
 
-        Ok(Wrapper {
-            _lib: lib,
-            module: Some(module),
-            destroy_object_fn,
-        })
+        Ok(wrapper)
     }
 
-    fn create_object_fn(lib: &Library) -> Symbol<extern fn() -> Box<dyn hermod_module::Module>> {
-        unsafe {
-            lib.get::<extern fn() -> Box<dyn hermod_module::Module>>(b"create_object\0")
+    fn declaration(wrapper: &mut Wrapper) {
+        let declaration = unsafe {
+            wrapper.lib.get::<*mut hermod_module::Declaration>(b"declaration\0")
                 .unwrap()
-                .into_raw()
-        }
-    }
+                .read()
+        };
 
-    fn destroy_object_fn(lib: &Library) -> Symbol<extern fn(&dyn hermod_module::Module)> {
+        if declaration.rustc_version != hermod_module::RUSTC_VERSION
+            || declaration.core_version != hermod_module::CORE_VERSION
+        {
+            panic!("Version mismatch");
+        }
+
         unsafe {
-            lib.get::<extern fn(&dyn hermod_module::Module)>(b"destroy_object\0")
-                .unwrap()
-                .into_raw()
+            (declaration.register)(wrapper);
         }
-    }
-}
-
-impl Drop for Wrapper {
-    fn drop(&mut self) {
-        let module = self.module.take().unwrap();
-
-        (self.destroy_object_fn)(module.as_ref());
-
-        // Workaround for https://github.com/rust-lang/rust/issues/28794
-        std::mem::forget(module);
     }
 }

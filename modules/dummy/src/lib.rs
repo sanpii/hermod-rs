@@ -1,13 +1,7 @@
-pub struct DummyModule;
+pub mod hello;
 
-impl hermod_module::Module for DummyModule {
-}
+hermod_module::export!(register);
 
-#[no_mangle]
-pub extern fn create_object() -> Box<DummyModule> {
-    Box::new(DummyModule {})
-}
-
-#[no_mangle]
-pub extern fn destroy_object(_: &DummyModule) {
+extern "C" fn register(registrar: &mut dyn hermod_module::Registrar) {
+    registrar.register("hello", Box::new(hello::Page));
 }
