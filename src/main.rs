@@ -8,11 +8,11 @@ use app::Application;
 use config::Config;
 use clap::Parser;
 
-#[derive(clap::Parser, serde::Deserialize)]
+#[derive(Parser, serde::Deserialize)]
 struct Args {
-    #[clap(long, short)]
+    #[arg(long, short)]
     config: String,
-    #[clap(long, short)]
+    #[arg(long, short)]
     foreground: bool,
 }
 
