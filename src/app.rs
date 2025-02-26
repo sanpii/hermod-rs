@@ -58,8 +58,8 @@ impl Application {
 
         for (name, plugin) in plugins.iter() {
             let filename = match plugin {
-                crate::config::Plugin::Simple(ref filename) => filename.clone(),
-                crate::config::Plugin::Detailed(ref detail) => detail.load.clone(),
+                crate::config::Plugin::Simple(filename) => filename.clone(),
+                crate::config::Plugin::Detailed(detail) => detail.load.clone(),
             };
 
             let path = format!("{}/{filename}", config.global.plugins_directory);
